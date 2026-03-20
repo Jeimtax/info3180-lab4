@@ -72,6 +72,12 @@ def login():
 
     return render_template("login.html", form=form)
 
+@app.route('/logout')
+def logout():
+    logout_user()
+    flash("You have successfully logged out.")
+    return redirect(url_for("home"))
+
 @app.route('/uploads/<filename>')
 def get_image(filename):
     return(send_from_directory(os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER']), filename))
