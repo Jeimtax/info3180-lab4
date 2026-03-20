@@ -1,6 +1,6 @@
 import os
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile
@@ -8,9 +8,21 @@ from app.forms import LoginForm, UploadForm
 from werkzeug.security import check_password_hash
 
 
+
+def get_uploaded_images():
+    uploaded_images = []
+    rootdir = os.getcwd()
+    upload_folder = os.path.join(rootdir, app.config['UPLOAD_FOLDER'])
+    for subdir, dirs, files in os.walk(upload_folder):
+        for file in files:
+            if file.lower().endswith(('jpg', 'jpeg', 'png')):
+                uploaded_images.append(file)
+    return uploaded_images
+
 ###
 # Routing for your application.
 ###
+
 
 @app.route('/')
 def home():
@@ -40,10 +52,11 @@ def upload():
     return render_template('upload.html')
 
 
+
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     form = LoginForm()
-    
+
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
@@ -58,6 +71,16 @@ def login():
             flash("Login Unsuccessful")
 
     return render_template("login.html", form=form)
+
+@app.route('/uploads/<filename>')
+def get_image(filename):
+    return(send_from_directory(os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER']), filename))
+
+@app.route('/files')
+@login_required
+def files():
+    images = get_uploaded_images()
+    return render_template('files.html', images=images) 
 
 # user_loader callback. This callback is used to reload the user object from
 # the user ID stored in the session
